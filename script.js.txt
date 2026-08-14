@@ -1,0 +1,387 @@
+// ============================================
+// متغيرات عامة
+// ============================================
+let gifs = JSON.parse(localStorage.getItem('gifCollection')) || [];
+let currentFilter = 'all';
+let currentGif = null;
+
+// بيانات تجريبية للعرض الأولي
+const demoGifs = [
+    {
+        id: 'demo1',
+        title: '😂 قطة مضحكة',
+        src: 'https://media.giphy.com/media/JIX9t2j0ZTN9S/giphy.gif',
+        category: 'animals',
+        tags: ['قطة', 'مضحك', 'حيوانات'],
+        views: 1250,
+        likes: 89,
+        date: '2026-08-10'
+    },
+    {
+        id: 'demo2',
+        title: '🎬 مشهد سينمائي',
+        src: 'https://media.giphy.com/media/3o7TKSjRrfIPjeiVyM/giphy.gif',
+        category: 'movies',
+        tags: ['أفلام', 'سينما'],
+        views: 3400,
+        likes: 256,
+        date: '2026-08-12'
+    },
+    {
+        id: 'demo3',
+        title: '⚽ هدف رائع',
+        src: 'https://media.giphy.com/media/l0HlNQ03J5JxX6lva/giphy.gif',
+        category: 'sports',
+        tags: ['كرة', 'هدف', 'رياضة'],
+        views: 5600,
+        likes: 412,
+        date: '2026-08-14'
+    },
+    {
+        id: 'demo4',
+        title: '😮 رد فعل مفاجأة',
+        src: 'https://media.giphy.com/media/26ufdipQqU2lhNA4g/giphy.gif',
+        category: 'reaction',
+        tags: ['مفاجأة', 'رد فعل'],
+        views: 890,
+        likes: 67,
+        date: '2026-08-13'
+    },
+    {
+        id: 'demo5',
+        title: '🌅 غروب الشمس',
+        src: 'https://media.giphy.com/media/3o7TKSjRrfIPjeiVyM/giphy.gif',
+        category: 'nature',
+        tags: ['طبيعة', 'غروب'],
+        views: 2100,
+        likes: 178,
+        date: '2026-08-11'
+    },
+    {
+        id: 'demo6',
+        title: '🇯🇵 أنمي قتال',
+        src: 'https://media.giphy.com/media/l0HlNQ03J5JxX6lva/giphy.gif',
+        category: 'anime',
+        tags: ['أنمي', 'قتال'],
+        views: 4500,
+        likes: 389,
+        date: '2026-08-15'
+    }
+];
+
+// ============================================
+// التهيئة
+// ============================================
+document.addEventListener('DOMContentLoaded', () => {
+    // إضافة بيانات تجريبية إذا كانت القائمة فارغة
+    if (gifs.length === 0) {
+        gifs = [...demoGifs];
+        saveGifs();
+    }
+    
+    renderGifs();
+    setupEventListeners();
+    updateStats();
+});
+
+// ============================================
+// عرض الصور
+// ============================================
+function renderGifs(filter = 'all', searchTerm = '') {
+    const grid = document.getElementById('gifGrid');
+    grid.innerHTML = '';
+    
+    let filtered = gifs;
+    
+    // فلترة حسب التصنيف
+    if (filter !== 'all') {
+        filtered = filtered.filter(g => g.category === filter);
+    }
+    
+    // فلترة حسب البحث
+    if (searchTerm) {
+        const term = searchTerm.toLowerCase();
+        filtered = filtered.filter(g => 
+            g.title.toLowerCase().includes(term) ||
+            g.tags.some(t => t.toLowerCase().includes(term))
+        );
+    }
+    
+    // ترتيب حسب الأحدث
+    filtered.sort((a, b) => new Date(b.date) - new Date(a.date));
+    
+    if (filtered.length === 0) {
+        grid.innerHTML = `
+            <div style="grid-column: 1/-1; text-align: center; padding: 4rem;">
+                <div style="font-size: 4rem; margin-bottom: 1rem;">📭</div>
+                <h3>لا توجد صور</h3>
+                <p style="color: var(--text-muted);">جرب تصنيفاً آخر أو أضف صورة جديدة</p>
+            </div>
+        `;
+        return;
+    }
+    
+    filtered.forEach(gif => {
+        const card = createGifCard(gif);
+        grid.appendChild(card);
+    });
+}
+
+function createGifCard(gif) {
+    const card = document.createElement('div');
+    card.className = 'gif-card';
+    card.onclick = () => openModal(gif);
+    
+    const categoryLabels = {
+        funny: '😂 مضحك',
+        reaction: '😮 رد فعل',
+        animals: '🐱 حيوانات',
+        sports: '⚽ رياضة',
+        movies: '🎬 أفلام',
+        anime: '🇯🇵 أنمي',
+        nature: '🌿 طبيعة',
+        other: '✨ أخرى'
+    };
+    
+    card.innerHTML = `
+        <img src="${gif.src}" alt="${gif.title}" loading="lazy">
+        <div class="gif-overlay">
+            <div class="gif-category">${categoryLabels[gif.category] || '✨'}</div>
+            <div class="gif-title">${gif.title}</div>
+            <div class="gif-stats">
+                <span>👁️ ${formatNumber(gif.views)}</span>
+                <span>❤️ ${gif.likes}</span>
+            </div>
+        </div>
+    `;
+    
+    return card;
+}
+
+// ============================================
+// رفع الصور
+// ============================================
+function setupEventListeners() {
+    const dropZone = document.getElementById('dropZone');
+    const fileInput = document.getElementById('fileInput');
+    
+    // السحب والإفلات
+    dropZone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        dropZone.classList.add('dragover');
+    });
+    
+    dropZone.addEventListener('dragleave', () => {
+        dropZone.classList.remove('dragover');
+    });
+    
+    dropZone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        dropZone.classList.remove('dragover');
+        const files = e.dataTransfer.files;
+        if (files.length > 0) handleFile(files[0]);
+    });
+    
+    // اختيار ملف
+    fileInput.addEventListener('change', (e) => {
+        if (e.target.files.length > 0) handleFile(e.target.files[0]);
+    });
+    
+    // فلاتر
+    document.querySelectorAll('.filter-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            currentFilter = btn.dataset.filter;
+            renderGifs(currentFilter, document.getElementById('searchInput').value);
+        });
+    });
+    
+    // بحث
+    document.getElementById('searchInput').addEventListener('input', (e) => {
+        renderGifs(currentFilter, e.target.value);
+    });
+    
+    // زر العودة للأعلى
+    window.addEventListener('scroll', () => {
+        const btn = document.getElementById('scrollTop');
+        if (window.scrollY > 500) {
+            btn.classList.add('visible');
+        } else {
+            btn.classList.remove('visible');
+        }
+    });
+}
+
+function handleFile(file) {
+    // التحقق من نوع الملف
+    const validTypes = ['image/gif', 'image/webp', 'image/png', 'image/jpeg', 'video/mp4'];
+    if (!validTypes.includes(file.type)) {
+        showToast('❌ يرجى اختيار ملف GIF, WEBP, PNG, أو MP4');
+        return;
+    }
+    
+    // التحقق من الحجم (50 ميجا كحد أقصى)
+    if (file.size > 50 * 1024 * 1024) {
+        showToast('❌ حجم الملف كبير جداً (الحد الأقصى 50 ميجا)');
+        return;
+    }
+    
+    // قراءة الملف
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        document.getElementById('previewImg').src = e.target.result;
+        document.getElementById('previewSection').style.display = 'block';
+        document.getElementById('previewSection').dataset.fileData = e.target.result;
+    };
+    reader.readAsDataURL(file);
+}
+
+function publishGif() {
+    const title = document.getElementById('gifTitle').value.trim();
+    const tags = document.getElementById('gifTags').value.split(',').map(t => t.trim()).filter(t => t);
+    const category = document.getElementById('gifCategory').value;
+    const fileData = document.getElementById('previewSection').dataset.fileData;
+    
+    if (!title) {
+        showToast('❌ الرجاء إدخال عنوان للصورة');
+        return;
+    }
+    
+    if (!category) {
+        showToast('❌ الرجاء اختيار التصنيف');
+        return;
+    }
+    
+    if (!fileData) {
+        showToast('❌ حدث خطأ في قراءة الملف');
+        return;
+    }
+    
+    const newGif = {
+        id: 'gif_' + Date.now(),
+        title: title,
+        src: fileData,
+        category: category,
+        tags: tags,
+        views: 0,
+        likes: 0,
+        date: new Date().toISOString().split('T')[0]
+    };
+    
+    gifs.unshift(newGif);
+    saveGifs();
+    
+    // إعادة تعيين النموذج
+    document.getElementById('previewSection').style.display = 'none';
+    document.getElementById('gifTitle').value = '';
+    document.getElementById('gifTags').value = '';
+    document.getElementById('gifCategory').value = '';
+    document.getElementById('fileInput').value = '';
+    
+    renderGifs(currentFilter);
+    updateStats();
+    showToast('✅ تم نشر الصورة بنجاح!');
+}
+
+// ============================================
+// نافذة العرض
+// ============================================
+function openModal(gif) {
+    currentGif = gif;
+    document.getElementById('modalImg').src = gif.src;
+    document.getElementById('modalTitle').textContent = gif.title;
+    
+    const tagsContainer = document.getElementById('modalTags');
+    tagsContainer.innerHTML = gif.tags.map(t => `<span class="tag">#${t}</span>`).join('');
+    
+    // زيادة عدد المشاهدات
+    gif.views++;
+    saveGifs();
+    renderGifs(currentFilter, document.getElementById('searchInput').value);
+    
+    document.getElementById('modal').classList.add('active');
+    document.body.style.overflow = 'hidden';
+}
+
+function closeModal() {
+    document.getElementById('modal').classList.remove('active');
+    document.body.style.overflow = '';
+    currentGif = null;
+}
+
+// إغلاق النافذة بالنقر خارجها
+document.getElementById('modal').addEventListener('click', (e) => {
+    if (e.target.id === 'modal') closeModal();
+});
+
+// إغلاق بالزر Escape
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') closeModal();
+});
+
+// ============================================
+// إجراءات الصورة
+// ============================================
+function downloadGif() {
+    if (!currentGif) return;
+    
+    const link = document.createElement('a');
+    link.href = currentGif.src;
+    link.download = `${currentGif.title.replace(/[^a-zA-Z0-9]/g, '_')}.gif`;
+    link.click();
+    
+    showToast('⬇️ جاري التحميل...');
+}
+
+function shareGif() {
+    if (!currentGif) return;
+    
+    if (navigator.share) {
+        navigator.share({
+            title: currentGif.title,
+            text: 'شاهد هذه الصورة المتحركة!',
+            url: window.location.href
+        });
+    } else {
+        copyLink();
+    }
+}
+
+function copyLink() {
+    navigator.clipboard.writeText(window.location.href).then(() => {
+        showToast('📋 تم نسخ الرابط!');
+    });
+}
+
+// ============================================
+// دوال مساعدة
+// ============================================
+function saveGifs() {
+    localStorage.setItem('gifCollection', JSON.stringify(gifs));
+}
+
+function updateStats() {
+    document.getElementById('totalGifs').textContent = gifs.length;
+}
+
+function formatNumber(num) {
+    if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M';
+    if (num >= 1000) return (num / 1000).toFixed(1) + 'K';
+    return num.toString();
+}
+
+function showToast(message) {
+    // إزالة التنبيهات السابقة
+    document.querySelectorAll('.toast').forEach(t => t.remove());
+    
+    const toast = document.createElement('div');
+    toast.className = 'toast';
+    toast.textContent = message;
+    document.body.appendChild(toast);
+    
+    setTimeout(() => {
+        toast.style.animation = 'slideIn 0.3s ease reverse';
+        setTimeout(() => toast.remove(), 300);
+    }, 3000);
+}

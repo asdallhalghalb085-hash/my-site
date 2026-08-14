@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎬 متحرك - موقع الصور المتحركة</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;900&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- شريط التنقل -->
+    <nav class="navbar">
+        <div class="nav-brand">🎬 متحرك</div>
+        <div class="nav-links">
+            <a href="#" class="active">الرئيسية</a>
+            <a href="#upload">رفع صورة</a>
+            <a href="#popular">الأكثر زيارة</a>
+        </div>
+        <div class="nav-search">
+            <input type="text" id="searchInput" placeholder="🔍 ابحث عن صورة متحركة...">
+        </div>
+    </nav>
+
+    <!-- قسم البطل -->
+    <header class="hero">
+        <h1>🎬 متحرك</h1>
+        <p>أكبر مكتبة للصور المتحركة بجودة عالية</p>
+        <div class="stats">
+            <div class="stat">
+                <span class="stat-number" id="totalGifs">0</span>
+                <span class="stat-label">صورة متحركة</span>
+            </div>
+            <div class="stat">
+                <span class="stat-number">4K</span>
+                <span class="stat-label">أقصى جودة</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- قسم الرفع -->
+    <section class="upload-section" id="upload">
+        <div class="upload-box" id="dropZone">
+            <div class="upload-icon">📤</div>
+            <h3>اسحب الصورة هنا أو انقر للاختيار</h3>
+            <p>يدعم: GIF, WEBP, MP4 ← يتحول تلقائياً لـ GIF</p>
+            <input type="file" id="fileInput" accept="image/gif,image/webp,video/mp4" hidden>
+            <button class="btn-upload" onclick="document.getElementById('fileInput').click()">
+                اختيار ملف
+            </button>
+        </div>
+        
+        <!-- معاينة قبل الرفع -->
+        <div class="preview-section" id="previewSection" style="display:none;">
+            <h4>معاينة الصورة</h4>
+            <img id="previewImg" src="" alt="معاينة">
+            <div class="preview-info">
+                <input type="text" id="gifTitle" placeholder="عنوان الصورة">
+                <input type="text" id="gifTags" placeholder="الوسوم (مفصولة بفاصلة)">
+                <select id="gifCategory">
+                    <option value="">اختر التصنيف</option>
+                    <option value="funny">😂 مضحك</option>
+                    <option value="reaction">😮 رد فعل</option>
+                    <option value="animals">🐱 حيوانات</option>
+                    <option value="sports">⚽ رياضة</option>
+                    <option value="movies">🎬 أفلام</option>
+                    <option value="anime">🇯🇵 أنمي</option>
+                    <option value="nature">🌿 طبيعة</option>
+                    <option value="other">✨ أخرى</option>
+                </select>
+                <button class="btn-publish" onclick="publishGif()">🚀 نشر الصورة</button>
+            </div>
+        </div>
+    </section>
+
+    <!-- فلاتر التصنيفات -->
+    <section class="filters">
+        <button class="filter-btn active" data-filter="all">الكل</button>
+        <button class="filter-btn" data-filter="funny">😂 مضحك</button>
+        <button class="filter-btn" data-filter="reaction">😮 رد فعل</button>
+        <button class="filter-btn" data-filter="animals">🐱 حيوانات</button>
+        <button class="filter-btn" data-filter="sports">⚽ رياضة</button>
+        <button class="filter-btn" data-filter="movies">🎬 أفلام</button>
+        <button class="filter-btn" data-filter="anime">🇯🇵 أنمي</button>
+        <button class="filter-btn" data-filter="nature">🌿 طبيعة</button>
+    </section>
+
+    <!-- شبكة الصور -->
+    <main class="gif-grid" id="gifGrid">
+        <!-- يُملأ بالجافاسكربت -->
+    </main>
+
+    <!-- نافذة عرض الصورة -->
+    <div class="modal" id="modal">
+        <div class="modal-content">
+            <span class="close-btn" onclick="closeModal()">&times;</span>
+            <img id="modalImg" src="" alt="">
+            <div class="modal-info">
+                <h3 id="modalTitle"></h3>
+                <div class="modal-tags" id="modalTags"></div>
+                <div class="modal-actions">
+                    <button class="action-btn" onclick="downloadGif()">⬇️ تحميل</button>
+                    <button class="action-btn" onclick="shareGif()">🔗 مشاركة</button>
+                    <button class="action-btn" onclick="copyLink()">📋 نسخ الرابط</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- زر العودة للأعلى -->
+    <button class="scroll-top" id="scrollTop" onclick="window.scrollTo(0,0)">⬆️</button>
+
+    <!-- تذييل -->
+    <footer class="footer">
+        <p>🎬 متحرك - جميع الصور محفوظة محلياً في متصفحك</p>
+        <p>لا يتم رفع أي ملف إلى الإنترنت</p>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>
